@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Facebook by patrickjames5</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Facebook</h1>
+      <h2 class="project-tagline">A Facebook Graph API SDK Library For Golang</h2>
+      <a href="https://github.com/patrickjames5/facebook" class="btn">View on GitHub</a>
+      <a href="https://github.com/patrickjames5/facebook/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/patrickjames5/facebook/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="a-facebook-graph-api-sdk-in-golang" class="anchor" href="#a-facebook-graph-api-sdk-in-golang" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>A Facebook Graph API SDK In Golang</h1>
+
+<p><a href="https://travis-ci.org/huandu/facebook"><img src="https://travis-ci.org/huandu/facebook.png?branch=master" alt="Build Status"></a></p>
+
+<p>This is a Go package fully supports Facebook Graph API with file upload, batch request, FQL and multi-FQL. It can be used in Google App Engine.</p>
+
+<p>API documents can be found on <a href="http://godoc.org/github.com/huandu/facebook">godoc</a>.</p>
+
+<p>Feel free to create an issue or send me a pull request if you have any "how-to" question or bug or suggestion when using this package. I'll try my best to reply it.</p>
+
+<h2>
+<a id="get-it" class="anchor" href="#get-it" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Get It</h2>
+
+<p>Use <code>go get -u github.com/huandu/facebook</code> to get or update it.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<h3>
+<a id="quick-start" class="anchor" href="#quick-start" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Quick start</h3>
+
+<p>Here is a sample to read my Facebook first name by uid.</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">package</span> main
+
+<span class="pl-k">import</span> (
+    <span class="pl-s"><span class="pl-pds">"</span>fmt<span class="pl-pds">"</span></span>
+    fb <span class="pl-s"><span class="pl-pds">"</span>github.com/huandu/facebook<span class="pl-pds">"</span></span>
+)
+
+<span class="pl-k">func</span> <span class="pl-en">main</span>() {
+    <span class="pl-smi">res</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> fb.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>/538744468<span class="pl-pds">"</span></span>, fb.<span class="pl-smi">Params</span>{
+        <span class="pl-s"><span class="pl-pds">"</span>fields<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>first_name<span class="pl-pds">"</span></span>,
+        <span class="pl-s"><span class="pl-pds">"</span>access_token<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>a-valid-access-token<span class="pl-pds">"</span></span>,
+    })
+    fmt.<span class="pl-c1">Println</span>(<span class="pl-s"><span class="pl-pds">"</span>here is my facebook first name:<span class="pl-pds">"</span></span>, res[<span class="pl-s"><span class="pl-pds">"</span>first_name<span class="pl-pds">"</span></span>])
+}</pre></div>
+
+<p>Type of <code>res</code> is <code>fb.Result</code> (a.k.a. <code>map[string]interface{}</code>).
+This type has several useful methods to decode <code>res</code> to any Go type safely.</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-c">// Decode "first_name" to a Go string.</span>
+<span class="pl-k">var</span> <span class="pl-smi">first_name</span> <span class="pl-k">string</span>
+res.<span class="pl-c1">DecodeField</span>(<span class="pl-s"><span class="pl-pds">"</span>first_name<span class="pl-pds">"</span></span>, &amp;first_name)
+fmt.<span class="pl-c1">Println</span>(<span class="pl-s"><span class="pl-pds">"</span>alternative way to get first_name:<span class="pl-pds">"</span></span>, first_name)
+
+<span class="pl-c">// It's also possible to decode the whole result into a predefined struct.</span>
+<span class="pl-k">type</span> <span class="pl-v">User</span> <span class="pl-k">struct</span> {
+    <span class="pl-v">FirstName</span> <span class="pl-k">string</span>
+}
+
+<span class="pl-k">var</span> <span class="pl-smi">user</span> <span class="pl-v">User</span>
+res.<span class="pl-c1">Decode</span>(&amp;user)
+fmt.<span class="pl-c1">Println</span>(<span class="pl-s"><span class="pl-pds">"</span>print first_name in struct:<span class="pl-pds">"</span></span>, user.<span class="pl-smi">FirstName</span>)</pre></div>
+
+<p>If a type implements <code>json.Unmarshaler</code> interface, <code>Decode</code> or <code>DecodeField</code> will use it to unmarshal JSON.</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-smi">res</span> <span class="pl-k">:=</span> <span class="pl-v">Result</span>{
+    <span class="pl-s"><span class="pl-pds">"</span>create_time<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>2006-01-02 15:16:17Z<span class="pl-pds">"</span></span>,
+}
+
+<span class="pl-c">// Type `*time.Time` implements `json.Unmarshaler`.</span>
+<span class="pl-c">// res.DecodeField will use the interface to unmarshal data.</span>
+<span class="pl-k">var</span> <span class="pl-smi">tm</span> time.<span class="pl-smi">Time</span>
+res.<span class="pl-c1">DecodeField</span>(<span class="pl-s"><span class="pl-pds">"</span>create_time<span class="pl-pds">"</span></span>, &amp;tm)</pre></div>
+
+<h3>
+<a id="read-a-graph-user-object-with-a-valid-access-token" class="anchor" href="#read-a-graph-user-object-with-a-valid-access-token" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Read a graph <code>user</code> object with a valid access token</h3>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-smi">res</span>, <span class="pl-smi">err</span> <span class="pl-k">:=</span> fb.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>/me/feed<span class="pl-pds">"</span></span>, fb.<span class="pl-smi">Params</span>{
+     <span class="pl-s"><span class="pl-pds">"</span>access_token<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>a-valid-access-token<span class="pl-pds">"</span></span>,
+})
+
+<span class="pl-k">if</span> err != <span class="pl-c1">nil</span> {
+    <span class="pl-c">// err can be an facebook API error.</span>
+    <span class="pl-c">// if so, the Error struct contains error details.</span>
+    <span class="pl-k">if</span> <span class="pl-smi">e</span>, <span class="pl-smi">ok</span> <span class="pl-k">:=</span> err.(*Error); ok {
+        fmt.<span class="pl-c1">Logf</span>(<span class="pl-s"><span class="pl-pds">"</span>facebook error. [message:<span class="pl-c1">%v</span>] [type:<span class="pl-c1">%v</span>] [code:<span class="pl-c1">%v</span>] [subcode:<span class="pl-c1">%v</span>]<span class="pl-pds">"</span></span>,
+            e.<span class="pl-smi">Message</span>, e.<span class="pl-smi">Type</span>, e.<span class="pl-smi">Code</span>, e.<span class="pl-smi">ErrorSubcode</span>)
+        <span class="pl-k">return</span>
+    }
+
+    <span class="pl-k">return</span>
+}
+
+<span class="pl-c">// read my last feed.</span>
+fmt.<span class="pl-c1">Println</span>(<span class="pl-s"><span class="pl-pds">"</span>my latest feed story is:<span class="pl-pds">"</span></span>, res.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>data.0.story<span class="pl-pds">"</span></span>))</pre></div>
+
+<h3>
+<a id="read-a-graph-search-for-page-and-decode-slice-of-maps" class="anchor" href="#read-a-graph-search-for-page-and-decode-slice-of-maps" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Read a graph <code>search</code> for page and decode slice of maps</h3>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-smi">res</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> fb.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>/search<span class="pl-pds">"</span></span>, fb.<span class="pl-smi">Params</span>{
+        <span class="pl-s"><span class="pl-pds">"</span>access_token<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>a-valid-access-token<span class="pl-pds">"</span></span>,
+        <span class="pl-s"><span class="pl-pds">"</span>type<span class="pl-pds">"</span></span>:         <span class="pl-s"><span class="pl-pds">"</span>page<span class="pl-pds">"</span></span>,
+        <span class="pl-s"><span class="pl-pds">"</span>q<span class="pl-pds">"</span></span>:            <span class="pl-s"><span class="pl-pds">"</span>nightlife,singapore<span class="pl-pds">"</span></span>,
+    })
+
+<span class="pl-k">var</span> <span class="pl-smi">items</span> []fb.<span class="pl-smi">Result</span>
+
+<span class="pl-smi">err</span> <span class="pl-k">:=</span> res.<span class="pl-c1">DecodeField</span>(<span class="pl-s"><span class="pl-pds">"</span>data<span class="pl-pds">"</span></span>, &amp;items)
+
+<span class="pl-k">if</span> err != <span class="pl-c1">nil</span> {
+    fmt.<span class="pl-c1">Logf</span>(<span class="pl-s"><span class="pl-pds">"</span>An error has happened <span class="pl-c1">%v</span><span class="pl-pds">"</span></span>, err)
+    <span class="pl-k">return</span>
+}
+
+<span class="pl-k">for</span> <span class="pl-smi">_</span>, <span class="pl-smi">item</span> <span class="pl-k">:=</span> <span class="pl-k">range</span> items {
+    fmt.<span class="pl-c1">Println</span>(item[<span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>])
+}</pre></div>
+
+<h3>
+<a id="use-app-and-session" class="anchor" href="#use-app-and-session" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Use <code>App</code> and <code>Session</code>
+</h3>
+
+<p>It's recommended to use <code>App</code> and <code>Session</code> in a production app. They provide more controls over all API calls. They can also make code clear and concise.</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-c">// create a global App var to hold app id and secret.</span>
+<span class="pl-k">var</span> <span class="pl-smi">globalApp</span> = fb.<span class="pl-c1">New</span>(<span class="pl-s"><span class="pl-pds">"</span>your-app-id<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>your-app-secret<span class="pl-pds">"</span></span>)
+
+<span class="pl-c">// facebook asks for a valid redirect uri when parsing signed request.</span>
+<span class="pl-c">// it's a new enforced policy starting in late 2013.</span>
+globalApp.<span class="pl-smi">RedirectUri</span> = <span class="pl-s"><span class="pl-pds">"</span>http://your.site/canvas/url/<span class="pl-pds">"</span></span>
+
+<span class="pl-c">// here comes a client with a facebook signed request string in query string.</span>
+<span class="pl-c">// creates a new session with signed request.</span>
+<span class="pl-smi">session</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> globalApp.<span class="pl-c1">SessionFromSignedRequest</span>(signedRequest)
+
+<span class="pl-c">// if there is another way to get decoded access token,</span>
+<span class="pl-c">// creates a session directly with the token.</span>
+<span class="pl-smi">session</span> <span class="pl-k">:=</span> globalApp.<span class="pl-c1">Session</span>(token)
+
+<span class="pl-c">// validate access token. err is nil if token is valid.</span>
+<span class="pl-smi">err</span> <span class="pl-k">:=</span> session.<span class="pl-c1">Validate</span>()
+
+<span class="pl-c">// use session to send api request with access token.</span>
+<span class="pl-smi">res</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> session.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>/me/feed<span class="pl-pds">"</span></span>, <span class="pl-c1">nil</span>)</pre></div>
+
+<h3>
+<a id="use-paging-field-in-response" class="anchor" href="#use-paging-field-in-response" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Use <code>paging</code> field in response.</h3>
+
+<p>Some Graph API responses use a special JSON structure to provide paging information. Use <code>Result.Paging()</code> to walk through all data in such results.</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-smi">res</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> session.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>/me/home<span class="pl-pds">"</span></span>, <span class="pl-c1">nil</span>)
+
+<span class="pl-c">// create a paging structure.</span>
+<span class="pl-smi">paging</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> res.<span class="pl-c1">Paging</span>(session)
+
+<span class="pl-c">// get current results.</span>
+<span class="pl-smi">results</span> <span class="pl-k">:=</span> paging.<span class="pl-c1">Data</span>()
+
+<span class="pl-c">// get next page.</span>
+<span class="pl-smi">noMore</span>, <span class="pl-smi">err</span> <span class="pl-k">:=</span> paging.<span class="pl-c1">Next</span>()
+results = paging.<span class="pl-c1">Data</span>()</pre></div>
+
+<h3>
+<a id="read-graph-api-response-and-decode-result-into-a-struct" class="anchor" href="#read-graph-api-response-and-decode-result-into-a-struct" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Read graph api response and decode result into a struct</h3>
+
+<p>As facebook Graph API always uses lower case words as keys in API response.
+This package can convert go's camel-case-style struct field name to facebook's underscore-style API key name.</p>
+
+<p>For instance, to decode following JSON response...</p>
+
+<div class="highlight highlight-source-json"><pre>{
+    <span class="pl-s"><span class="pl-pds">"</span>foo_bar<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>player<span class="pl-pds">"</span></span>
+}</pre></div>
+
+<p>One can use following struct.</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">type</span> <span class="pl-v">Data</span> <span class="pl-k">struct</span> {
+    <span class="pl-v">FooBar</span> <span class="pl-k">string</span>  <span class="pl-c">// "FooBar" maps to "foo_bar" in JSON automatically in this case.</span>
+}</pre></div>
+
+<p>Decoding behavior can be changed per field through field tag -- just like what <code>encoding/json</code> does.</p>
+
+<p>Following is a sample shows all possible field tags.</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-c">// define a facebook feed object.</span>
+<span class="pl-k">type</span> <span class="pl-v">FacebookFeed</span> <span class="pl-k">struct</span> {
+    <span class="pl-v">Id</span>          <span class="pl-k">string</span> <span class="pl-s"><span class="pl-pds">`</span>facebook:",required"<span class="pl-pds">`</span></span>             <span class="pl-c">// this field must exist in response.</span>
+                                                          <span class="pl-c">// mind the "," before "required".</span>
+    <span class="pl-v">Story</span>       <span class="pl-k">string</span>
+    <span class="pl-v">FeedFrom</span>    *FacebookFeedFrom <span class="pl-s"><span class="pl-pds">`</span>facebook:"from"<span class="pl-pds">`</span></span>       <span class="pl-c">// use customized field name "from".</span>
+    <span class="pl-v">CreatedTime</span> <span class="pl-k">string</span> <span class="pl-s"><span class="pl-pds">`</span>facebook:"created_time,required"<span class="pl-pds">`</span></span> <span class="pl-c">// both customized field name and "required" flag.</span>
+    <span class="pl-v">Omitted</span>     <span class="pl-k">string</span> <span class="pl-s"><span class="pl-pds">`</span>facebook:"-"<span class="pl-pds">`</span></span>                     <span class="pl-c">// this field is omitted when decoding.</span>
+}
+
+<span class="pl-k">type</span> <span class="pl-v">FacebookFeedFrom</span> <span class="pl-k">struct</span> {
+    <span class="pl-v">Name</span>, <span class="pl-v">Id</span> <span class="pl-k">string</span>
+}
+
+<span class="pl-c">// create a feed object direct from graph api result.</span>
+<span class="pl-k">var</span> <span class="pl-smi">feed</span> <span class="pl-v">FacebookFeed</span>
+<span class="pl-smi">res</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> session.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>/me/feed<span class="pl-pds">"</span></span>, <span class="pl-c1">nil</span>)
+res.<span class="pl-c1">DecodeField</span>(<span class="pl-s"><span class="pl-pds">"</span>data.0<span class="pl-pds">"</span></span>, &amp;feed) <span class="pl-c">// read latest feed</span></pre></div>
+
+<h3>
+<a id="send-a-batch-request" class="anchor" href="#send-a-batch-request" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Send a batch request</h3>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-smi">params1</span> <span class="pl-k">:=</span> <span class="pl-v">Params</span>{
+    <span class="pl-s"><span class="pl-pds">"</span>method<span class="pl-pds">"</span></span>: fb.<span class="pl-smi">GET</span>,
+    <span class="pl-s"><span class="pl-pds">"</span>relative_url<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>me<span class="pl-pds">"</span></span>,
+}
+<span class="pl-smi">params2</span> <span class="pl-k">:=</span> <span class="pl-v">Params</span>{
+    <span class="pl-s"><span class="pl-pds">"</span>method<span class="pl-pds">"</span></span>: fb.<span class="pl-smi">GET</span>,
+    <span class="pl-s"><span class="pl-pds">"</span>relative_url<span class="pl-pds">"</span></span>: <span class="pl-c1">uint64</span>(<span class="pl-c1">100002828925788</span>),
+}
+<span class="pl-smi">results</span>, <span class="pl-smi">err</span> <span class="pl-k">:=</span> fb.<span class="pl-c1">BatchApi</span>(your_access_token, params1, params2)
+
+<span class="pl-k">if</span> err != <span class="pl-c1">nil</span> {
+    <span class="pl-c">// check error...</span>
+    <span class="pl-k">return</span>
+}
+
+<span class="pl-c">// batchResult1 and batchResult2 are response for params1 and params2.</span>
+<span class="pl-smi">batchResult1</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> results[<span class="pl-c1">0</span>].<span class="pl-c1">Batch</span>()
+<span class="pl-smi">batchResult2</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> results[<span class="pl-c1">1</span>].<span class="pl-c1">Batch</span>()
+
+<span class="pl-c">// Use parsed result.</span>
+<span class="pl-k">var</span> <span class="pl-smi">id</span> <span class="pl-k">string</span>
+<span class="pl-smi">res</span> <span class="pl-k">:=</span> batchResult1.<span class="pl-smi">Result</span>
+res.<span class="pl-c1">DecodeField</span>(<span class="pl-s"><span class="pl-pds">"</span>id<span class="pl-pds">"</span></span>, &amp;id)
+
+<span class="pl-c">// Use response header.</span>
+<span class="pl-smi">contentType</span> <span class="pl-k">:=</span> batchResult1.<span class="pl-smi">Header</span>.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>Content-Type<span class="pl-pds">"</span></span>)</pre></div>
+
+<h3>
+<a id="send-fql-query" class="anchor" href="#send-fql-query" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Send FQL query</h3>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-smi">results</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> fb.<span class="pl-c1">FQL</span>(<span class="pl-s"><span class="pl-pds">"</span>SELECT username FROM page WHERE page_id = 20531316728<span class="pl-pds">"</span></span>)
+fmt.<span class="pl-c1">Println</span>(results[<span class="pl-c1">0</span>][<span class="pl-s"><span class="pl-pds">"</span>username<span class="pl-pds">"</span></span>]) <span class="pl-c">// print "facebook"</span>
+
+<span class="pl-c">// most FQL query requires access token. create session to hold access token.</span>
+<span class="pl-smi">session</span> <span class="pl-k">:=</span> &amp;fb.<span class="pl-smi">Session</span>{}
+session.<span class="pl-c1">SetAccessToken</span>(<span class="pl-s"><span class="pl-pds">"</span>A-VALID-ACCESS-TOKEN<span class="pl-pds">"</span></span>)
+<span class="pl-smi">results</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> session.<span class="pl-c1">FQL</span>(<span class="pl-s"><span class="pl-pds">"</span>SELECT username FROM page WHERE page_id = 20531316728<span class="pl-pds">"</span></span>)
+fmt.<span class="pl-c1">Println</span>(results[<span class="pl-c1">0</span>][<span class="pl-s"><span class="pl-pds">"</span>username<span class="pl-pds">"</span></span>]) <span class="pl-c">// print "facebook"</span></pre></div>
+
+<h3>
+<a id="make-multi-fql" class="anchor" href="#make-multi-fql" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Make multi-FQL</h3>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-smi">res</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> fb.<span class="pl-c1">MultiFQL</span>(Params{
+    <span class="pl-s"><span class="pl-pds">"</span>query1<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>SELECT username FROM page WHERE page_id = 20531316728<span class="pl-pds">"</span></span>,
+    <span class="pl-s"><span class="pl-pds">"</span>query2<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>SELECT uid FROM user WHERE uid = 538744468<span class="pl-pds">"</span></span>,
+})
+<span class="pl-k">var</span> <span class="pl-smi">query1</span>, <span class="pl-smi">query2</span> []<span class="pl-v">Result</span>
+
+<span class="pl-c">// get response for query1 and query2.</span>
+res.<span class="pl-c1">DecodeField</span>(<span class="pl-s"><span class="pl-pds">"</span>query1<span class="pl-pds">"</span></span>, &amp;query1)
+res.<span class="pl-c1">DecodeField</span>(<span class="pl-s"><span class="pl-pds">"</span>query2<span class="pl-pds">"</span></span>, &amp;query2)
+
+<span class="pl-c">// most FQL query requires access token. create session to hold access token.</span>
+<span class="pl-smi">session</span> <span class="pl-k">:=</span> &amp;fb.<span class="pl-smi">Session</span>{}
+session.<span class="pl-c1">SetAccessToken</span>(<span class="pl-s"><span class="pl-pds">"</span>A-VALID-ACCESS-TOKEN<span class="pl-pds">"</span></span>)
+<span class="pl-smi">res</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> session.<span class="pl-c1">MultiFQL</span>(Params{
+    <span class="pl-s"><span class="pl-pds">"</span>query1<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>...<span class="pl-pds">"</span></span>,
+    <span class="pl-s"><span class="pl-pds">"</span>query2<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>...<span class="pl-pds">"</span></span>,
+})
+
+<span class="pl-c">// same as the sample without access token...</span></pre></div>
+
+<h3>
+<a id="use-it-in-google-app-engine" class="anchor" href="#use-it-in-google-app-engine" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Use it in Google App Engine</h3>
+
+<p>Google App Engine provide <code>appengine/urlfetch</code> package as standard http client package. Default client in <code>net/http</code> doesn't work. One must explicitly set http client in <code>Session</code> to make it work.</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">import</span> (
+    <span class="pl-s"><span class="pl-pds">"</span>appengine<span class="pl-pds">"</span></span>
+    <span class="pl-s"><span class="pl-pds">"</span>appengine/urlfetch<span class="pl-pds">"</span></span>
+)
+
+<span class="pl-c">// suppose it's the appengine context initialized somewhere.</span>
+<span class="pl-k">var</span> <span class="pl-smi">context</span> appengine.<span class="pl-smi">Context</span>
+
+<span class="pl-c">// default Session object uses http.DefaultClient which is not allowed to use</span>
+<span class="pl-c">// in appengine. one has to create a Session and assign it a special client.</span>
+<span class="pl-smi">seesion</span> <span class="pl-k">:=</span> globalApp.<span class="pl-c1">Session</span>(<span class="pl-s"><span class="pl-pds">"</span>a-access-token<span class="pl-pds">"</span></span>)
+session.<span class="pl-smi">HttpClient</span> = urlfetch.<span class="pl-c1">Client</span>(context)
+
+<span class="pl-c">// now, session uses appengine http client now.</span>
+<span class="pl-smi">res</span>, <span class="pl-smi">err</span> <span class="pl-k">:=</span> session.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>/me<span class="pl-pds">"</span></span>, <span class="pl-c1">nil</span>)</pre></div>
+
+<h3>
+<a id="select-graph-api-version" class="anchor" href="#select-graph-api-version" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Select Graph API version</h3>
+
+<p>See <a href="https://developers.facebook.com/docs/apps/versions">Platform Versioning</a> to understand facebook versioning strategy.</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-c">// this package uses default version which is controlled by facebook app setting.</span>
+<span class="pl-c">// change following global variable to specific a global default version.</span>
+fb.<span class="pl-smi">Version</span> = <span class="pl-s"><span class="pl-pds">"</span>v2.0<span class="pl-pds">"</span></span>
+
+<span class="pl-c">// starting with graph api v2.0, it's not allowed to get user information without access token.</span>
+fb.<span class="pl-c1">Api</span>(<span class="pl-s"><span class="pl-pds">"</span>huan.du<span class="pl-pds">"</span></span>, <span class="pl-v">GET</span>, <span class="pl-c1">nil</span>)
+
+<span class="pl-c">// it's possible to specify version per session.</span>
+<span class="pl-smi">session</span> <span class="pl-k">:=</span> &amp;fb.<span class="pl-smi">Session</span>{}
+session.<span class="pl-smi">Version</span> = <span class="pl-s"><span class="pl-pds">"</span>v2.0<span class="pl-pds">"</span></span> <span class="pl-c">// overwrite global default.</span></pre></div>
+
+<h3>
+<a id="enable-appsecret_proof" class="anchor" href="#enable-appsecret_proof" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Enable <code>appsecret_proof</code>
+</h3>
+
+<p>Facebook can verify Graph API Calls with <code>appsecret_proof</code>. It's a feature to make Graph API call more secure. See <a href="https://developers.facebook.com/docs/graph-api/securing-requests">Securing Graph API Requests</a> to know more about it.</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-smi">globalApp</span> <span class="pl-k">:=</span> fb.<span class="pl-c1">New</span>(<span class="pl-s"><span class="pl-pds">"</span>your-app-id<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>your-app-secret<span class="pl-pds">"</span></span>)
+
+<span class="pl-c">// enable "appsecret_proof" for all sessions created by this app.</span>
+globalApp.<span class="pl-smi">EnableAppsecretProof</span> = <span class="pl-c1">true</span>
+
+<span class="pl-c">// all calls in this session are secured.</span>
+<span class="pl-smi">session</span> <span class="pl-k">:=</span> globalApp.<span class="pl-c1">Session</span>(<span class="pl-s"><span class="pl-pds">"</span>a-valid-access-token<span class="pl-pds">"</span></span>)
+session.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>/me<span class="pl-pds">"</span></span>, <span class="pl-c1">nil</span>)
+
+<span class="pl-c">// it's also possible to enable/disable this feature per session.</span>
+session.<span class="pl-c1">EnableAppsecretProof</span>(<span class="pl-c1">false</span>)</pre></div>
+
+<h3>
+<a id="debugging-api-requests" class="anchor" href="#debugging-api-requests" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Debugging API Requests</h3>
+
+<p>Facebook introduces a way to debug graph API calls. See <a href="https://developers.facebook.com/docs/graph-api/using-graph-api/v2.3#debugging">Debugging API Requests</a> for details.</p>
+
+<p>This package provides both package level and per session debug flag. Set <code>Debug</code> to a <code>DEBUG_*</code> constant to change debug mode globally; or use <code>Session#SetDebug</code> to change debug mode for one session.</p>
+
+<p>When debug mode is turned on, use <code>Result#DebugInfo</code> to get <code>DebugInfo</code> struct from result.</p>
+
+<div class="highlight highlight-source-go"><pre>fb.<span class="pl-smi">Debug</span> = fb.<span class="pl-smi">DEBUG_ALL</span>
+
+<span class="pl-smi">res</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> fb.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>/me<span class="pl-pds">"</span></span>, fb.<span class="pl-smi">Params</span>{<span class="pl-s"><span class="pl-pds">"</span>access_token<span class="pl-pds">"</span></span>: <span class="pl-s"><span class="pl-pds">"</span>xxx<span class="pl-pds">"</span></span>})
+<span class="pl-smi">debugInfo</span> <span class="pl-k">:=</span> res.<span class="pl-c1">DebugInfo</span>()
+
+fmt.<span class="pl-c1">Println</span>(<span class="pl-s"><span class="pl-pds">"</span>http headers:<span class="pl-pds">"</span></span>, debugInfo.<span class="pl-smi">Header</span>)
+fmt.<span class="pl-c1">Println</span>(<span class="pl-s"><span class="pl-pds">"</span>facebook api version:<span class="pl-pds">"</span></span>, debugInfo.<span class="pl-smi">FacebookApiVersion</span>)</pre></div>
+
+<h3>
+<a id="work-with-package-golangorgxoauth2" class="anchor" href="#work-with-package-golangorgxoauth2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Work with package <code>golang.org/x/oauth2</code>
+</h3>
+
+<p>Package <code>golang.org/x/oauth2</code> can handle facebook OAuth2 authentication process and access token very well. This package can work with it by setting <code>Session#HttpClient</code> to OAuth2's client.</p>
+
+<div class="highlight highlight-source-go"><pre><span class="pl-k">import</span> (
+    <span class="pl-s"><span class="pl-pds">"</span>golang.org/x/oauth2<span class="pl-pds">"</span></span>
+    oauth2fb <span class="pl-s"><span class="pl-pds">"</span>golang.org/x/oauth2/facebook<span class="pl-pds">"</span></span>
+    fb <span class="pl-s"><span class="pl-pds">"</span>github.com/huandu/facebook<span class="pl-pds">"</span></span>
+)
+
+<span class="pl-c">// Get facebook access token.</span>
+<span class="pl-smi">conf</span> <span class="pl-k">:=</span> &amp;oauth2.<span class="pl-smi">Config</span>{
+    <span class="pl-v">ClientID</span>:     <span class="pl-s"><span class="pl-pds">"</span>AppId<span class="pl-pds">"</span></span>,
+    <span class="pl-v">ClientSecret</span>: <span class="pl-s"><span class="pl-pds">"</span>AppSecret<span class="pl-pds">"</span></span>,
+    <span class="pl-v">RedirectURL</span>:  <span class="pl-s"><span class="pl-pds">"</span>CallbackURL<span class="pl-pds">"</span></span>,
+    <span class="pl-v">Scopes</span>:       []<span class="pl-k">string</span>{<span class="pl-s"><span class="pl-pds">"</span>email<span class="pl-pds">"</span></span>},
+    <span class="pl-v">Endpoint</span>:     oauth2fb.<span class="pl-smi">Endpoint</span>,
+}
+<span class="pl-smi">token</span>, <span class="pl-smi">err</span> <span class="pl-k">:=</span> conf.<span class="pl-c1">Exchange</span>(oauth2.<span class="pl-smi">NoContext</span>, <span class="pl-s"><span class="pl-pds">"</span>code<span class="pl-pds">"</span></span>)
+
+<span class="pl-c">// Create a client to manage access token life cycle.</span>
+<span class="pl-smi">client</span> <span class="pl-k">:=</span> conf.<span class="pl-c1">Client</span>(oauth2.<span class="pl-smi">NoContext</span>, token)
+
+<span class="pl-c">// Use OAuth2 client with session.</span>
+<span class="pl-smi">session</span> <span class="pl-k">:=</span> &amp;fb.<span class="pl-smi">Session</span>{
+    <span class="pl-v">Version</span>:    <span class="pl-s"><span class="pl-pds">"</span>v2.4<span class="pl-pds">"</span></span>,
+    <span class="pl-v">HttpClient</span>: client,
+}
+
+<span class="pl-c">// Use session.</span>
+<span class="pl-smi">res</span>, <span class="pl-smi">_</span> <span class="pl-k">:=</span> session.<span class="pl-c1">Get</span>(<span class="pl-s"><span class="pl-pds">"</span>/me<span class="pl-pds">"</span></span>, <span class="pl-c1">nil</span>)</pre></div>
+
+<h2>
+<a id="change-log" class="anchor" href="#change-log" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Change Log</h2>
+
+<p>See <a href="CHANGELOG.md">CHANGELOG.md</a>.</p>
+
+<h2>
+<a id="out-of-scope" class="anchor" href="#out-of-scope" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Out of Scope</h2>
+
+<ol>
+<li>No OAuth integration. This package only provides APIs to parse/verify access token and code generated in OAuth 2.0 authentication process.</li>
+<li>No old RESTful API support. Such APIs are deprecated for years. Forget about them.</li>
+</ol>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
+
+<p>This package is licensed under MIT license. See LICENSE for details.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/patrickjames5/facebook">Facebook</a> is maintained by <a href="https://github.com/patrickjames5">patrickjames5</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
